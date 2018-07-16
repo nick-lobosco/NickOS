@@ -36,6 +36,10 @@ int printf(const char* format, ...){
 					uintVar = va_arg(args, unsigned int);
 					terminalWrite_uint(uintVar);
 					break;
+				case 'l':
+				case 'b':
+				case 'x':
+				case 'o':
 				case '%':
 					break;	
 			}

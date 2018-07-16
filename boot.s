@@ -1,4 +1,3 @@
-
 /* Declare constants for the multiboot header. */
 .set ALIGN,    1<<0             /* align loaded modules on page boundaries */
 .set MEMINFO,  1<<1             /* provide memory map */
@@ -6,107 +5,156 @@
 .set MAGIC,    0x1BADB002       /* 'magic number' lets bootloader find the header */
 .set CHECKSUM, -(MAGIC + FLAGS) /* checksum of above, to prove we are multiboot */
 
-/* 
-Declare a multiboot header that marks the program as a kernel. These are magic
-values that are documented in the multiboot standard. The bootloader will
-search for this signature in the first 8 KiB of the kernel file, aligned at a
-32-bit boundary. The signature is in its own section so the header can be
-forced to be within the first 8 KiB of the kernel file.
-*/
 .section .multiboot
 .align 4
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
 
-/*
-The multiboot standard does not define the value of the stack pointer register
-(esp) and it is up to the kernel to provide a stack. This allocates room for a
-small stack by creating a symbol at the bottom of it, then allocating 16384
-bytes for it, and finally creating a symbol at the top. The stack grows
-downwards on x86. The stack is in its own section so it can be marked nobits,
-which means the kernel file is smaller because it does not contain an
-uninitialized stack. The stack on x86 must be 16-byte aligned according to the
-System V ABI standard and de-facto extensions. The compiler will assume the
-stack is properly aligned and failure to align the stack will result in
-undefined behavior.
-*/
 .section .bss
 .align 16
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
 
-/*
-The linker script specifies _start as the entry point to the kernel and the
-bootloader will jump to this position once the kernel has been loaded. It
-doesn't make sense to return from this function as the bootloader is gone.
-*/
+
 .section .text
 .global _start
 .type _start, @function
+
+//.globl printX
+//extern printX
+.globl gdt
+gdt:
+	.zero 8 //NULL
+	.byte 0xFF, 0xFF, 0x0, 0x0, 0x0, 0x9A, 0xCF, 0x0 //KERNEL CODE 
+	.byte 0xFF, 0xFF, 0x0, 0x0, 0x0, 0x92, 0xCF, 0x0 //KERNEL DATA
+	.byte 0xFF, 0xFF, 0x0, 0x0, 0x0, 0xFA, 0xCF, 0x0 //USER CODE
+	.byte 0xFF, 0xFF, 0x0, 0x0, 0x0, 0xF2, 0xCF, 0x0 //USER CODE
+gdtEnd:
+
+.globl gdtDescriptor
+gdtDescriptor:
+	.short	gdtEnd - gdt - 1
+	.long	gdt
+
+
+.globl int_handler
+int_handler:
+	mov $0x10, %ax
+	mov %ax, %gs
+	movl $0x02720174, %gs:0xB8000
+	hlt
+
+.p2align 4
+idt:
+	.skip 50*8
+		
+
+idtr:
+	.short	(50*8)-1
+	.long	idt
+
+
+handlePress:
+	/*
+	mov $0x10, %bx
+	mov %bx, %gs
+	//xor %eax, %eax
+	movw	$0x0130, %ax
+	inb	$0x60, %al
+	mov	kbdus + %al, %al
+	and	$0x01FF, %ax
+	movw %ax, %gs:0xB8000
+	*/
+	pushal
+	cld
+	call printX
+	popal
+	iret
+
+.globl test
+test:
+	lidt	idtr	
+	call 	picRemap
+	sti
+	movl 	$handlePress, %eax
+	
+	//movl 	$int_handler, %eax
+	mov		%ax, idt+33*8
+	movw	$0x8, idt+33*8+2
+	movw	$0x8e00, idt+33*8+4
+	shr		$16, %eax
+	movw	%ax, idt+33*8+6
+
+	jmp 	cont	
+	
+
+.globl picRemap
+picRemap:
+	//begin initialization	
+	movb	$0x11, 	%al
+	outb	%al, $0x20
+	outb	%al, $0xA0
+	
+	//set offsets
+	movb	$0x20, 	%al
+	outb	%al, 	$0x21
+	movb	$0x28, 	%al
+	outb	%al, 	$0xA1
+
+	//set up slave pic
+	movb	$4, %al
+	outb	%al, $0x21
+	movb	$2, %al
+	outb	%al, $0xA1
+
+	//8086 mode
+	movb	$0x1, %al
+	outb %al, $0x21
+	outb %al, $0xA1
+
+	movb	$0xFD, %al
+	outb	%al, $0x21
+	outb	%al, $0xA1
+	ret
+	
 _start:
-	/*
-	The bootloader has loaded us into 32-bit protected mode on a x86
-	machine. Interrupts are disabled. Paging is disabled. The processor
-	state is as defined in the multiboot standard. The kernel has full
-	control of the CPU. The kernel can only make use of hardware features
-	and any code it provides as part of itself. There's no printf
-	function, unless the kernel provides its own <stdio.h> header and a
-	printf implementation. There are no security restrictions, no
-	safeguards, no debugging mechanisms, only what the kernel provides
-	itself. It has absolute and complete power over the
-	machine.
-	*/
-
-	/*
-	To set up a stack, we set the esp register to point to the top of our
-	stack (as it grows downwards on x86 systems). This is necessarily done
-	in assembly as languages such as C cannot function without a stack.
-	*/
 	mov $stack_top, %esp
-
-	/*
-	This is a good place to initialize crucial processor state before the
-	high-level kernel is entered. It's best to minimize the early
-	environment where crucial features are offline. Note that the
-	processor is not fully initialized yet: Features such as floating
-	point instructions and instruction set extensions are not initialized
-	yet. The GDT should be loaded here. Paging should be enabled here.
-	C++ features such as global constructors and exceptions will require
-	runtime support to work as well.
-	*/
-
-	/*
-	Enter the high-level kernel. The ABI requires the stack is 16-byte
-	aligned at the time of the call instruction (which afterwards pushes
-	the return pointer of size 4 bytes). The stack was originally 16-byte
-	aligned above and we've since pushed a multiple of 16 bytes to the
-	stack since (pushed 0 bytes so far) and the alignment is thus
-	preserved and the call is well defined.
-	*/
+	
+	lgdt	gdtDescriptor
+	movw 	$0x10, %ax
+	movw 	%ax, %ds
+	movw 	%ax, %es
+	movw 	%ax, %fs
+	movw 	%ax, %gs
+	movw 	%ax, %ss
+	jmp 	$0x08,$flush
+flush:
+	//call	picRemap
+	jmp 	test
+	
+cont:
 	pushl %eax
 	pushl %ebx
 	call kernel_main
+/*
+	movl	$int_handler, %eax
+	mov		%ax, idt+49*8
+	movw	$1, idt+49*8+2
+	movw	$0x8e00, idt+49*8+4
+	shr		$16, %eax
+	mov		%ax, idt+49*8+6
+	lidt	idtr
+	int		$49
+*/
+	//call test
+	//call loadIdt
+	//call picRemap
+	
 
-	/*
-	If the system has nothing more to do, put the computer into an
-	infinite loop. To do that:
-	1) Disable interrupts with cli (clear interrupt enable in eflags).
-	   They are already disabled by the bootloader, so this is not needed.
-	   Mind that you might later enable interrupts and return from
-	   kernel_main (which is sort of nonsensical to do).
-	2) Wait for the next interrupt to arrive with hlt (halt instruction).
-	   Since they are disabled, this will lock up the computer.
-	3) Jump to the hlt instruction if it ever wakes up due to a
-	   non-maskable interrupt occurring or due to system management mode.
-	*/
 	cli
 1:	hlt
 	jmp 1b
 
-/*
-Set the size of the _start symbol to the current location '.' minus its start.
-This is useful when debugging or when you implement call tracing.
-*/
 .size _start, . - _start

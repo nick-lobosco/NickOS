@@ -61,4 +61,11 @@ static char getScancode(){
     return kbdus[code];
 }
 
+static char gs(){
+	int code = inb(0x60);
+	if(code <= 0x58)
+    	return kbdus[code];
+	else
+		return -1;
+}
 #endif

@@ -2,6 +2,17 @@
 #include "IO.h"
 #include "../libc/Math.h"
 
+
+void printX(){
+	//terminalBuffer = (uint16_t*) 0xB8000;
+	char c = gs();
+	outb(0x20,0x20);
+	if(c!=-1)
+		terminalPutchar(c);
+		//terminalBuffer[0] = vgaEntry(c, vgaEntryColor(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
+	return;
+}
+
 void terminalInitialize(void) 
 {
 	terminalColor = vgaEntryColor(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
@@ -38,7 +49,41 @@ void terminalWrite(const char* data, size_t size) {
 void terminalWrite_string(const char* data){
 	terminalWrite(data, strlen(data));
 }
- 
+
+/* 
+void terminalWriteInt(int num, int base){
+	if(x==0){
+		terminalPutchar('0');
+		return;
+	}
+	int maxSize;
+	char numArr[33];
+	if(base==2)
+		maxSize = 32;
+	else if(base==8)
+		maxSize = 11;
+	else if(base==10)
+		maxSize = 10;
+	else if(base==16)
+		maxSize= 8;
+	else return;
+	int i, digit, div;
+	int len=0;
+	for(i=0;i<maxSize;i++){
+		div = i ? pow(base,i) : 1;
+		digit = (x/div)%base;
+		if(digit)
+			len=i+1;
+		num[maxSize-1-i] = '0' + digit;
+	}
+	for(i=maxSize-len;i<maxSize;i++){
+		terminalPutchar(num[i]);
+	}
+
+	
+
+}
+*/
 void terminalWrite_uint(unsigned int x){
 	if(x==0){
 		terminalPutchar(48);
