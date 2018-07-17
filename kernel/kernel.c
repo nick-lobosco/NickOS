@@ -73,7 +73,8 @@ void kernel_main(multiboot_info_t* mbt, unsigned int magic)
 {
 	/* Initialize terminal interface */
 	terminalInitialize();
-	while(1);
+	printf("%d\n%b\n%x\n%o\nfsdasd%%", 100,100,100,100);
+//getMemory(mbt);
 	/*
 	printf("%d\n", &gdt);
 	printf("%d\n", gdtDescriptor.gdtPtr);

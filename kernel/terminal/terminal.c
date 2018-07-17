@@ -46,11 +46,64 @@ void terminalWrite(const char* data, size_t size) {
 		terminalPutchar(data[i]);
 }
 
-void terminalWrite_string(const char* data){
+void terminalWriteString(const char* data){
 	terminalWrite(data, strlen(data));
 }
+ 
+char getChar(int x){
+	if(x<10)
+		return '0' + x;
+	return 'A' + x - 10;
+}
 
-/* 
+void terminalWriteInt(int x, int base){
+	int maxSize;
+	int neg=0;
+	char num[32]; 
+	if(x==0){
+		terminalPutchar('0');
+		return;
+	}
+	else if(x<0){
+		neg=1;
+		x*=-1;
+	}
+	switch(base){
+		case 10:
+			maxSize=10;
+			break;
+		case 2:
+			maxSize=32;
+			break;
+		case 8:
+			maxSize=11;
+			break;
+		case 16:
+			maxSize=8;
+			break;
+		default:
+			return;
+	}
+		
+	int i, digit, div;
+	int len=0;
+	for(i=0;i<maxSize;i++){
+		div = i ? pow(base,i) : 1;
+		digit = (x/div)%base;
+		if(digit)
+			len=i+1;
+		num[maxSize -1 -i] = getChar(digit);
+	}
+	if(neg)
+		terminalPutchar('-');
+	if(base==16)
+		terminalWriteString("0x");
+	for(i=maxSize-len;i<maxSize;i++){
+		terminalPutchar(num[i]);
+	}
+}
+
+/*
 void terminalWriteInt(int num, int base){
 	if(x==0){
 		terminalPutchar('0');
@@ -84,6 +137,7 @@ void terminalWriteInt(int num, int base){
 
 }
 */
+
 void terminalWrite_uint(unsigned int x){
 	if(x==0){
 		terminalPutchar(48);

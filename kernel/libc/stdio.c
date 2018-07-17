@@ -22,7 +22,7 @@ int printf(const char* format, ...){
 				case 'd':
 				case 'i':
 					intVar = va_arg(args, int);
-					terminalWrite_uint(intVar);
+					terminalWriteInt(intVar, 10);
 					break;
 				case 'c':
 					charVar = va_arg(args, int);
@@ -30,7 +30,7 @@ int printf(const char* format, ...){
 					break;
 				case 's':
 					stringVar = va_arg(args, char*);
-					terminalWrite_string(stringVar);
+					terminalWriteString(stringVar);
 					break;
 				case 'u':
 					uintVar = va_arg(args, unsigned int);
@@ -38,9 +38,19 @@ int printf(const char* format, ...){
 					break;
 				case 'l':
 				case 'b':
+					intVar = va_arg(args, int);
+					terminalWriteInt(intVar, 2);
+					break;
 				case 'x':
+					intVar = va_arg(args, int);
+					terminalWriteInt(intVar, 16);
+					break;
 				case 'o':
+					intVar = va_arg(args, int);
+					terminalWriteInt(intVar, 8);
+					break;
 				case '%':
+					terminalPutchar('%');
 					break;	
 			}
 		}

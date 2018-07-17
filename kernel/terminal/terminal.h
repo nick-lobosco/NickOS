@@ -49,7 +49,8 @@ void terminalSetcolor(uint8_t color);
 void terminalPutchar(char c); 
 void terminalWrite(const char* data, size_t size); 
 
-void terminalWrite_string(const char* data); 
+void terminalWriteInt(int x, int base);
+void terminalWriteString(const char* data); 
 void terminalWrite_uint(unsigned int x);
 void terminalWriteAddress(unsigned long long x);
 void cursorLeft();
