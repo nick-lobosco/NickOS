@@ -7,23 +7,29 @@
 
 .section .multiboot
 .align 4
+.globl mbStart
+mbStart:
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
+.globl mbEnd
+mbEnd:
 
 .section .bss
+.globl bssStart
+bssStart:
 .align 16
+.globl stack_bottom
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
+.globl bssEnd
+bssEnd:
 
+.section .data
+.globl dataStart
+dataStart:
 
-.section .text
-.global _start
-.type _start, @function
-
-//.globl printX
-//extern printX
 .globl gdt
 gdt:
 	.zero 8 //NULL
@@ -38,6 +44,23 @@ gdtDescriptor:
 	.short	gdtEnd - gdt - 1
 	.long	gdt
 
+.p2align 4
+idt:
+	.skip 50*8
+		
+idtr:
+	.short	(50*8)-1
+	.long	idt
+
+.globl dataEnd
+dataEnd:
+
+.section .text
+.global _start
+.type _start, @function
+
+.globl textStart
+textStart:
 
 .globl int_handler
 int_handler:
@@ -46,41 +69,22 @@ int_handler:
 	movl $0x02720174, %gs:0xB8000
 	hlt
 
-.p2align 4
-idt:
-	.skip 50*8
-		
-
-idtr:
-	.short	(50*8)-1
-	.long	idt
-
 
 handlePress:
-	/*
-	mov $0x10, %bx
-	mov %bx, %gs
-	//xor %eax, %eax
-	movw	$0x0130, %ax
-	inb	$0x60, %al
-	mov	kbdus + %al, %al
-	and	$0x01FF, %ax
-	movw %ax, %gs:0xB8000
-	*/
 	pushal
 	cld
 	call printX
 	popal
 	iret
 
-.globl test
-test:
+.globl loadIdt
+loadIdt:
 	lidt	idtr	
 	call 	picRemap
 	sti
 	movl 	$handlePress, %eax
-	
-	//movl 	$int_handler, %eax
+
+fillIdt:	
 	mov		%ax, idt+33*8
 	movw	$0x8, idt+33*8+2
 	movw	$0x8e00, idt+33*8+4
@@ -122,6 +126,8 @@ picRemap:
 _start:
 	mov $stack_top, %esp
 	
+	
+loadGdt:
 	lgdt	gdtDescriptor
 	movw 	$0x10, %ax
 	movw 	%ax, %ds
@@ -131,30 +137,19 @@ _start:
 	movw 	%ax, %ss
 	jmp 	$0x08,$flush
 flush:
-	//call	picRemap
-	jmp 	test
+	jmp 	loadIdt
 	
+.globl cont
 cont:
 	pushl %eax
 	pushl %ebx
 	call kernel_main
-/*
-	movl	$int_handler, %eax
-	mov		%ax, idt+49*8
-	movw	$1, idt+49*8+2
-	movw	$0x8e00, idt+49*8+4
-	shr		$16, %eax
-	mov		%ax, idt+49*8+6
-	lidt	idtr
-	int		$49
-*/
-	//call test
-	//call loadIdt
-	//call picRemap
-	
 
 	cli
 1:	hlt
 	jmp 1b
+
+.globl textEnd
+textEnd:
 
 .size _start, . - _start

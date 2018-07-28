@@ -11,3 +11,16 @@ int pow(int x, int y){
 	}
 	return ret;
 }
+
+int abs(int x){
+	return (x>0 ? x : -1*x);
+}
+
+int sign(int x){
+	return (x>0 ? 1 : -1);
+}
+
+int min(int x, int y){
+	return (x<y ? x : y);
+}
+

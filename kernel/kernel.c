@@ -2,7 +2,22 @@
 #include "libc/stdio.h"
 #include "terminal/terminal.h"
 #include <stdint.h> 
+#include "tables.h"
+#include "kernel.h"
+#include "memory/memory.h"
 
+extern int mbStart;
+extern int mbEnd;
+extern int bssStart;
+extern int bssEnd;
+extern int textStart;
+extern int textEnd;
+extern int dataStart;
+extern int dataEnd;
+
+extern int stack_bottom;
+extern int cont;
+extern int gdt;
 /* Check if the compiler thinks we are targeting the wrong operating system. */
 #if defined(__linux__)
 
@@ -14,75 +29,34 @@
 #error "This tutorial needs to be compiled with a ix86-elf compiler"
 #endif
 
-typedef struct gdtentry GDTE;
- struct gdtentry{
-	short limit1;
-	short base1;
-	char base2;
-	char access;
-	char flags;
-	char base3;
-}__attribute__((packed));
 
 
-struct gdtDescriptor{
-	short size;
-	unsigned int gdtPtr;
-}__attribute__((packed));
-typedef struct gdtDescriptor GDTD;
-
-typedef struct idtd{
-	short size;
-	int address;
-}IDTD;
-
-typedef struct idtEntry{
-	uint16_t offset1;
-	uint16_t selector;
-	uint8_t zero;
-	uint8_t type_attr;
-	uint16_t offset2;
-}IDTE;
-
-extern GDTD gdtDescriptor;
-extern GDTE gdt;
-
-void printGdtEntry(GDTE *gdte){
-	printf("%d %d %d %d %d %d\n", gdte->limit1, gdte->base1, gdte->base1, gdte->access, gdte->flags, gdte->base3);
-}
-
-void printGDT(GDTD *gdtd){
-	printf("%d\n%d\n",gdtd->size, gdtd->gdtPtr);
-	int i;
-	for(i=0;i<(gdtd->size);i+=8){
-		printGdtEntry((GDTE*)(gdtd->gdtPtr+i));
+void memset(char* mem, char c, size_t size){
+	size_t i;
+	for(i=0;i<size;i++){
+		mem[i]=c;
 	}
 }
 
-void getMemory(multiboot_info_t* mbt){
-    multiboot_memory_map_t *map = (multiboot_memory_map_t*)mbt->mmap_addr;
-	unsigned int i;
-	for(i=0;i<mbt->mmap_length;i+=map->size+4){
-		map=(multiboot_memory_map_t*)(mbt->mmap_addr+i);
-		printf("size: %d   addr_low: %d   addr_high: %d   len_low: %d   len_high: %d   type: %d\n",
-			map->size, map->addr_low, map->addr_high, map->len_low, map->len_high, map->type);
-	}
-}
+
+
 
 void kernel_main(multiboot_info_t* mbt, unsigned int magic) 
 {
-	/* Initialize terminal interface */
+	//store multiboot header globally
+	bootHeader = mbt;
 	terminalInitialize();
-	printf("%d\n%b\n%x\n%o\nfsdasd%%", 100,100,100,100);
-//getMemory(mbt);
-	/*
-	printf("%d\n", &gdt);
-	printf("%d\n", gdtDescriptor.gdtPtr);
-	printf("\n\n");
-	printGDT(&gdtDescriptor);
-	*/
+//	printGrubMemoryMap();
+	heapInit();
+	printFreeList();
+	void* ptr1 = getHeapMemory(20);
+	printFreeList();
+	void* ptr2 = getHeapMemory(30);
+	printFreeList();
+	freeHeapMemory(ptr1);
+	printFreeList();
+	freeHeapMemory(ptr2);
+	printFreeList();
+	
+	//memoryInitialize();
 }
-
-
-
-
