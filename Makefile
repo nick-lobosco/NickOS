@@ -1,12 +1,25 @@
-GCCFLAGS=-Wno-unused -Wno-int-conversion
+AS=../cross/bin/i686-elf-as
+GCC=../cross/bin/i686-elf-gcc
+LD=../cross/bin/i686-elf-gcc -T linker.ld
+GCCFLAGS=-Wno-unused -Wno-int-conversion -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+LDFLAGS=-ffreestanding -O2 -nostdlib -lgcc
 
-make: boot.s kernel/kernel.c kernel/terminal/terminal.c kernel/libc/string.c kernel/libc/stdio.c kernel/libc/Math.c kernel/memory/memory.c linker.ld
-	../cross/bin/i686-elf-as boot.s -o boot.o
-	../cross/bin/i686-elf-gcc $(GCCFLAGS) -c kernel/kernel.c kernel/terminal/terminal.c kernel/libc/string.c kernel/libc/stdio.c kernel/libc/Math.c kernel/memory/memory.c -std=gnu99 -ffreestanding -O2 -Wall -Wextra
-	../cross/bin/i686-elf-gcc -T linker.ld -o myos.bin -ffreestanding -O2 -nostdlib boot.o kernel.o terminal.o stdio.o string.o Math.o memory.o -lgcc 
+TARGET = myos.bin
+OBJECTS := $(patsubst %.c, %.o, $(shell find -type f -name "*.c")) boot.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(LD) -o $@ $^ $(LDFLAGS)
 	cp myos.bin isodir/boot/myos.bin
 	grub-mkrescue -o myos.iso isodir
-	rm *.o
+	rm $(OBJECTS)
 
+%.o: %.c
+	$(GCC) $(GCCFLAGS) -c $^ -o $@
+
+boot.o: boot.s
+	$(AS) boot.s -o boot.o
+	
 clean:
 	rm myos.bin myos.iso isodir/boot/myos.bin
