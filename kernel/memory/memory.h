@@ -9,6 +9,8 @@
 #define MINHEAPSTART 100*MB
 #define MAXHEAPLENGTH 100*MB
 
+uint8_t heapInitialized;
+
 /* Heap Struct Definitions */
 typedef struct heapBlock{
 	uint32_t length;

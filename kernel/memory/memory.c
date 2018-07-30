@@ -1,5 +1,5 @@
 #include "memory.h"
-#include "../kernel.h"
+#include "../kernelMain/kernel.h"
 #include "../libc/stdio.h"
 #include "../libc/Math.h"
 
@@ -14,6 +14,9 @@ void printGrubMemoryMap(){
 }
 
 void heapInit(){
+	if(heapInitialized)
+		return;
+	heapInitialized = 1;
 	/* heap global variable initializations */
 	freeList = NULL;
 	
@@ -58,6 +61,8 @@ void heapInit(){
 }
 
 void* getHeapMemory(size_t size){
+	if(!heapInitialized)
+		heapInit();
 	size += size%2; //make even
 	freeHeapBlock* freePtr = freeList;
 	void* data;
@@ -102,7 +107,7 @@ void* getHeapMemory(size_t size){
 void freeHeapMemory(void* ptr){
 	freeHeapBlock* header = (freeHeapBlock*)((uint8_t*)ptr - sizeof(heapBlock));
 	header->length -=1;
-	heapBlock* footer = (heapBlock*)((uint8_t)ptr + header->length);
+	heapBlock* footer = (heapBlock*)((uint8_t*)ptr + header->length);
 	footer->length-=1;
 	freeList->prev = header;
 	header->prev = NULL;

@@ -36,27 +36,30 @@ inline uint16_t vgaEntry(unsigned char uc, uint8_t color){
 
 static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
+uint8_t terminalInitialized;
 
-uint16_t index;
-uint16_t cursorIndex;
+uint16_t terminalIndex;
 uint8_t terminalColor;
-uint16_t currentStart;
-uint16_t currentEnd;
+uint16_t cursorIndex;
+uint16_t cmdStart;
+uint16_t cmdEnd;
 volatile uint16_t* terminalBuffer;
 
 void terminalInitialize(void); 
 void terminalSetcolor(uint8_t color); 
 void terminalPutchar(char c); 
 void terminalWrite(const char* data, size_t size); 
+void clearTerminal();
 
 void terminalWriteInt(int x, int base);
 void terminalWriteString(const char* data); 
 void terminalWrite_uint(unsigned int x);
+/*
 void terminalWriteAddress(unsigned long long x);
 void cursorLeft();
 void cursorRight();
 void del();
 void back();
 void updateCursor(uint16_t pos);
-
+*/
 #endif

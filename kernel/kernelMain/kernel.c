@@ -1,23 +1,12 @@
-#include "multiboot.h"
-#include "libc/stdio.h"
-#include "terminal/terminal.h"
+#include "../multiboot.h"
+#include "../libc/stdio.h"
+#include "../terminal/terminal.h"
 #include <stdint.h> 
 #include "tables.h"
 #include "kernel.h"
-#include "memory/memory.h"
+#include "../memory/memory.h"
+#include "../terminal/shell.h"
 
-extern int mbStart;
-extern int mbEnd;
-extern int bssStart;
-extern int bssEnd;
-extern int textStart;
-extern int textEnd;
-extern int dataStart;
-extern int dataEnd;
-
-extern int stack_bottom;
-extern int cont;
-extern int gdt;
 /* Check if the compiler thinks we are targeting the wrong operating system. */
 #if defined(__linux__)
 
@@ -30,21 +19,16 @@ extern int gdt;
 #endif
 
 
-
-void memset(char* mem, char c, size_t size){
-	size_t i;
-	for(i=0;i<size;i++){
-		mem[i]=c;
-	}
-}
-
-
-
-
 void kernel_main(multiboot_info_t* mbt, unsigned int magic) 
 {
 	//store multiboot header globally
 	bootHeader = mbt;
+	terminalInitialized = 0;
+	shellRunning = 0;
+	heapInitialized = 0;
+
+	runShell();
+/*
 	terminalInitialize();
 //	printGrubMemoryMap();
 	heapInit();
@@ -59,4 +43,5 @@ void kernel_main(multiboot_info_t* mbt, unsigned int magic)
 	printFreeList();
 	
 	//memoryInitialize();
+*/
 }

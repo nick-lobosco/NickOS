@@ -7,29 +7,18 @@
 
 .section .multiboot
 .align 4
-.globl mbStart
-mbStart:
 .long MAGIC
 .long FLAGS
 .long CHECKSUM
-.globl mbEnd
-mbEnd:
 
 .section .bss
-.globl bssStart
-bssStart:
 .align 16
 .globl stack_bottom
 stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
-.globl bssEnd
-bssEnd:
 
 .section .data
-.globl dataStart
-dataStart:
-
 .globl gdt
 gdt:
 	.zero 8 //NULL
@@ -52,15 +41,9 @@ idtr:
 	.short	(50*8)-1
 	.long	idt
 
-.globl dataEnd
-dataEnd:
-
 .section .text
 .global _start
 .type _start, @function
-
-.globl textStart
-textStart:
 
 .globl int_handler
 int_handler:
@@ -73,7 +56,7 @@ int_handler:
 handlePress:
 	pushal
 	cld
-	call printX
+	call handleKeyPress
 	popal
 	iret
 
@@ -148,8 +131,5 @@ cont:
 	cli
 1:	hlt
 	jmp 1b
-
-.globl textEnd
-textEnd:
 
 .size _start, . - _start
