@@ -13,6 +13,14 @@ void printGrubMemoryMap(){
 	}
 }
 
+void printFreeList(){
+	freeHeapBlock* ptr = freeList;
+	while(ptr){
+		printf("addr: %u, length: %u, use: %u, prev: %u, next: %u\n",ptr, ptr->length, ptr->length&1, ptr->prev, ptr->next);
+		ptr=ptr->next;
+	}	
+}
+
 void heapInit(){
 	if(heapInitialized)
 		return;
@@ -22,8 +30,8 @@ void heapInit(){
 	
 	/* heap temp variables */
 	freeHeapBlock *prevFreeBlock = NULL;
-	freeHeapBlock* header;
-	heapBlock* footer;
+	freeHeapBlock *header;
+	heapBlock *footer;
 	uint32_t remainingHeapLength = MAXHEAPLENGTH;
 	uint32_t blockLength;
 	
@@ -61,6 +69,8 @@ void heapInit(){
 }
 
 void* getHeapMemory(size_t size){
+	if(size<8)
+		size=8;
 	if(!heapInitialized)
 		heapInit();
 	size += size%2; //make even
@@ -72,9 +82,9 @@ void* getHeapMemory(size_t size){
 				uint32_t length1 = size;
 				uint32_t length2 = freePtr->length -2* sizeof(heapBlock) - size;
 				heapBlock* header1 = (heapBlock*)freePtr;
-				heapBlock* footer1 = (uint8_t*)freePtr + sizeof(freeHeapBlock) + length1;
+				heapBlock* footer1 = (uint8_t*)freePtr + sizeof(heapBlock) + length1;
 				freeHeapBlock* header2 = (uint8_t*)footer1 + sizeof(heapBlock);
-				heapBlock* footer2 = (uint8_t*)header2 + sizeof(freeHeapBlock) + length2;
+				heapBlock* footer2 = (uint8_t*)header2 + sizeof(heapBlock) + length2;
 				header1->length = length1 + 1;
 				footer1->length = header1->length;
 				header2->length = length2;
@@ -90,6 +100,10 @@ void* getHeapMemory(size_t size){
 				return data;
 		}
 		else if(freePtr->length >= size){ //return whole block
+				heapBlock* header = (heapBlock*)freePtr;
+				heapBlock* footer = (uint8_t*)freePtr + sizeof(heapBlock) + header->length;
+				header->length += 1;
+				footer->length += 1;
 				if(freePtr->prev)
 					freePtr->prev->next = freePtr->next;
 				else
@@ -112,15 +126,7 @@ void freeHeapMemory(void* ptr){
 	freeList->prev = header;
 	header->prev = NULL;
 	header->next = freeList;
+//	printf("len: %d, prev %u, next %u\n", header->length, header->prev, header->next);
 	freeList = header;
-}
-
-void printFreeList(){
-	freeHeapBlock* ptr = freeList;
-	printf("\n\n");
-	while(ptr){
-		printf("addr: %u, length: %u, use: %u, prev: %u, next: %u\n",ptr, ptr->length, ptr->length&1, ptr->prev, ptr->next);
-		ptr=ptr->next;
-	}	
 }
 

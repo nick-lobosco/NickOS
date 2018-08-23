@@ -19,6 +19,25 @@
 #endif
 
 
+void testMem(){
+	terminalInitialize();
+	heapInit();
+	printFreeList();
+	void* ptr;
+	
+	ptr = getHeapMemory(6);
+	freeHeapMemory(ptr);
+	printFreeList();
+
+	ptr = getHeapMemory(11);
+	freeHeapMemory(ptr);
+	printFreeList();
+
+	ptr = getHeapMemory(10);
+	freeHeapMemory(ptr);
+	printFreeList();
+}
+
 void kernel_main(multiboot_info_t* mbt, unsigned int magic) 
 {
 	//store multiboot header globally
@@ -26,10 +45,14 @@ void kernel_main(multiboot_info_t* mbt, unsigned int magic)
 	terminalInitialized = 0;
 	shellRunning = 0;
 	heapInitialized = 0;
-
-	runShell();
-/*
 	terminalInitialize();
+	printf("%b\n", mbt->flags );
+	printf("%d\n%d\n", mbt->drives_length, mbt->drives_addr);
+	//runShell();
+	
+	
+	//testMem();
+/*
 //	printGrubMemoryMap();
 	heapInit();
 	printFreeList();

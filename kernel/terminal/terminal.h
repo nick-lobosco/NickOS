@@ -38,6 +38,7 @@ static const size_t VGA_WIDTH = 80;
 static const size_t VGA_HEIGHT = 25;
 uint8_t terminalInitialized;
 
+uint8_t shiftHeld;
 uint16_t terminalIndex;
 uint8_t terminalColor;
 uint16_t cursorIndex;

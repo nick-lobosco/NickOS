@@ -11,11 +11,14 @@ void clearTerminal(){
 			terminalBuffer[index] = vgaEntry(' ', terminalColor);
 		}
 	}
+	terminalIndex=0;
+	cursorIndex=0;
 }
 
 void terminalInitialize(void) 
 {
 	terminalInitialized = 1;
+	shiftHeld=0;
 	terminalColor = vgaEntryColor(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
 	terminalBuffer = (uint16_t*) 0xB8000;
 	clearTerminal();
